@@ -1,0 +1,5 @@
+uv.lock
+.venv
+scripts/
+*.pyc
+
