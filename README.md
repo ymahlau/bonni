@@ -1,4 +1,4 @@
-![title image](https://github.com/ymahlau/bonni/img/title.png)
+![title image](https://github.com/ymahlau/bonni/blob/main/img/title.png?raw=true)
 
 # BONNI: Bayesian Optimization via Neural Network surrogates and Interior Point Optimization
 
@@ -6,7 +6,7 @@ BONNI optimizes any black box function WITH gradient information.
 Especially in optimizations with many degree of freedom, gradient-information, gradient-information increases optimization speed. 
 In the image, the surrogate fits the function almost perfectly with few observations.
 
-![surrogate image](https://github.com/ymahlau/bonni/img/surrogate.png)
+![surrogate image](https://github.com/ymahlau/bonni/blob/main/img/surrogate.png?raw=true)
 
 ## Installation
 
