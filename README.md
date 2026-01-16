@@ -1,4 +1,4 @@
-![title image](https://github.com/ymahlau/bonni/blob/main/img/title.png?raw=true)
+![title image](https://github.com/ymahlau/bonni/blob/main/img/bonni.png?raw=true)
 
 # BONNI: Bayesian Optimization via Neural Network surrogates and Interior Point Optimization
 
