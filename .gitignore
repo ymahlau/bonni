@@ -1,5 +1,5 @@
 uv.lock
 .venv
-scripts/
+outputs/
 *.pyc
-
+*.npz

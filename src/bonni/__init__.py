@@ -1,5 +1,5 @@
 from bonni.acquisition.ei import EIConfig
-from bonni.bonni import optimize
+from bonni.bonni import optimize_bonni
 from bonni.ipopt import optimize_ipopt
 from bonni.model.mlp import MLPModelConfig
 from bonni.model.optim import OptimConfig
@@ -11,6 +11,6 @@ __all__ = [
     "InitType",
     "MLPModelConfig",
     "OptimConfig",
-    "optimize",
+    "optimize_bonni",
     "optimize_ipopt",
 ]

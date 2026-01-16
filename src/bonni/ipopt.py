@@ -16,6 +16,7 @@ def optimize_ipopt(
     save_path: Path | str | None = None,
     tol: float = 1e-8,
     direction: Literal["maximize", "minimize"] = "minimize",
+    bounds_eps: float = 1e-6,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     assert bounds.ndim == 2 and bounds.shape[1] == 2, "bounds needs to be array of shape (degree_of_freedom, 2)"
     assert x0.ndim == 1 and x0.shape[0] == bounds.shape[0], f"x0 needs to have shape (degree_of_freedom,), but got {x0.shape}"
@@ -23,6 +24,7 @@ def optimize_ipopt(
         raise Exception(f"Invalid direction argument: {direction}")
     if save_path is not None:
         save_path = Path(save_path)
+    
     
     wrapper = FunctionWrapper(
         fn, 
@@ -36,6 +38,10 @@ def optimize_ipopt(
     if max_iterations is not None:
         options['maxiter'] = max_iterations
     
+    bounds_ipopt = np.copy(bounds)
+    bounds_ipopt[:, 0] += bounds_eps
+    bounds_ipopt[:, 1] -= bounds_eps
+    
     try:
         cyipopt.minimize_ipopt(
             fun=wrapper,
@@ -43,7 +49,7 @@ def optimize_ipopt(
             args=(),
             method=None,
             jac=True,
-            bounds=bounds,
+            bounds=bounds_ipopt,
             tol=tol,
             options=options,
         )

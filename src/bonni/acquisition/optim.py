@@ -1,0 +1,114 @@
+import numpy as np
+
+import jax
+import jax.numpy as jnp
+
+from bonni.acquisition.ei import EIConfig, ExpectedImprovement
+from bonni.ipopt import optimize_ipopt
+from bonni.model.embedding import SinCosActionEmbedding
+from bonni.model.ensemble import MLPEnsemble, MLPEnsembleConfig
+
+
+class AcqFnWrapper:
+    def __init__(
+        self,
+        xs: np.ndarray,
+        ys: np.ndarray,
+        bounds: np.ndarray,
+        num_embedding_channels: int,
+        ei_cfg: EIConfig,
+        ensemble_cfg: MLPEnsembleConfig,
+        params,
+        key: jax.Array,
+    ):
+        self.xs = jnp.asarray(xs)
+        self.ys = jnp.asarray(ys)
+        self.bounds = jnp.asarray(bounds)
+        self.num_embedding_channels = num_embedding_channels
+        self.ei_cfg = ei_cfg
+        self.ensemble_cfg = ensemble_cfg
+        self.params = params
+        self.af = ExpectedImprovement(ei_cfg)
+        self.embedding = SinCosActionEmbedding(num_channels=num_embedding_channels)
+        self.model = MLPEnsemble(ensemble_cfg)
+        self.key = key
+    
+    def _forward(self, x_local: jax.Array) -> jax.Array:
+        key, subkey = jax.random.split(self.key)
+        self.key = key
+        acq_value = self.af(
+            x_test=x_local,
+            xs=self.xs,
+            ys=self.ys,
+            bounds=self.bounds,
+            params=self.params,
+            model=self.model,
+            embedding=self.embedding,
+            key=subkey,
+        )
+        return acq_value
+    
+    def __call__(
+        self,
+        x: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        x_jax = jnp.asarray(x)
+        value, grad = jax.value_and_grad(self._forward)(x_jax)
+        value_numpy = np.asarray(value, dtype=float)
+        grad_numpy = np.asarray(grad, dtype=float)
+        return value_numpy, grad_numpy
+    
+    def jax_call(
+        self,
+        x: jax.Array,
+    ) -> jax.Array:
+        assert x.ndim == 1 and x.shape[0] == self.bounds.shape[0]
+        return self._forward(x)
+
+
+def optimize_acquisition_ipopt(
+    params,
+    key: jax.Array,
+    xs: np.ndarray,
+    ys: np.ndarray,
+    bounds: np.ndarray,
+    num_acq_optim_samples: int,
+    num_embedding_channels: int,
+    ei_cfg: EIConfig,
+    ensemble_cfg: MLPEnsembleConfig,
+) -> tuple[np.ndarray, np.ndarray]:
+    key, subkey = jax.random.split(key)
+    acq_wrapper = AcqFnWrapper(
+        xs=xs,
+        ys=ys,
+        bounds=bounds,
+        num_embedding_channels=num_embedding_channels,
+        ei_cfg=ei_cfg,
+        ensemble_cfg=ensemble_cfg,
+        params=params,
+        key=subkey,
+    )
+    
+    num_actions = bounds.shape[0]
+    random_actions = jax.random.uniform(key, shape=(num_actions,))
+    random_actions_np = np.asarray(random_actions, dtype=float)
+    action_ranges = bounds[:, 1] - bounds[:, 0]
+    x0 = random_actions_np * action_ranges + bounds[:, 0]
+    
+    ax, ay, _ = optimize_ipopt(
+        fn=acq_wrapper,
+        x0=x0,
+        bounds=bounds,
+        max_fn_eval=num_acq_optim_samples,
+        direction="maximize",
+    )
+    
+    max_idx = np.argmax(ay)
+    best_new_sample = ax[max_idx]
+    af_value = ay[max_idx]
+    return best_new_sample, af_value
+    
+    
+    
+    
+
