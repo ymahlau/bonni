@@ -57,7 +57,7 @@ autosummary_generate = True
 autodoc_default_options = {
     'undoc-members': False,  # Don't document members without docstrings
 }
-
+autodoc_mock_imports = ["cyipopt"]
 
 nb_execution_mode = "off"
 
