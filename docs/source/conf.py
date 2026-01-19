@@ -6,10 +6,22 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'BONNI'
-copyright = '2026, Yannik Mahlau'
-author = 'Yannik Mahlau'
-release = '0.1.0'
+import tomllib
+from pathlib import Path
+
+# -- Project information -----------------------------------------------------
+
+# Define path to pyproject.toml (assuming conf.py is in docs/source/)
+root_path = Path(__file__).parents[2] 
+
+with open(root_path / "pyproject.toml", "rb") as f:
+    data = tomllib.load(f)
+    
+project = data["project"]["name"] # Or keep hardcoded if you prefer formatting
+author = data["project"]["authors"][0]["name"] # Auto-fetch author
+release = data["project"]["version"] # The crucial part!
+
+copyright = f'2026, {author}'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

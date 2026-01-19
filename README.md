@@ -64,6 +64,7 @@ xs, ys, gs = optimize_ipopt(
     # of iterations and fn_eval may not be the same
     max_fn_eval=5,
     max_iterations=3,
+    direction="maximize",
     save_path=Path.cwd(),
 )
 ```

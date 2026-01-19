@@ -1,6 +1,6 @@
 [project]
 name = "bonni"
-version = "0.1.0"
+version = "1.0.0"
 description = "BONNI: Bayesian Optimization via Neural Network surrogates and Interior Point Optimization"
 readme = "README.md"
 authors = [
