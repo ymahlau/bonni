@@ -6,9 +6,9 @@ readme = "README.md"
 authors = [
     { name = "Yannik Mahlau", email = "mahlau@tnt.uni-hannover.de" },
 ]
-requires-python = ">=3.11, <3.13"
+requires-python = ">=3.12, <3.13"
 dependencies = [
-    "jax[cuda]",
+    "jax",
     "matplotlib",
     "flax",
     "seaborn>=0.13.2",
@@ -29,10 +29,6 @@ dev = [
     "ipykernel>=6.29.5",
     "pre-commit>=4.0.1",
     "pymdown-extensions>=10.12",
-    "pytest>=8.3.4",
-    "pytest-cov>=6.0.0",
-    "ruff>=0.8.2",
-    "tox-uv>=1.16.1",
     "pydoclint>=0.6.6",
     "sphinx>=8.0",
     "sphinx-autobuild>=2025.8.25",
