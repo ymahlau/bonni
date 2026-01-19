@@ -1,16 +1,28 @@
-![title image](https://github.com/ymahlau/bonni/blob/main/img/bonni.png?raw=true)
+![title image](https://github.com/ymahlau/bonni/blob/main/docs/source/_static/bonni.png?raw=true)
+
+[![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://bonni.readthedocs.io/en/latest/)
+[![PyPI version](https://img.shields.io/pypi/v/bonni)](https://pypi.org/project/bonni/)
 
 # BONNI: Bayesian Optimization via Neural Network surrogates and Interior Point Optimization
 
 BONNI optimizes any black box function WITH gradient information. 
-Especially in optimizations with many degree of freedom, gradient-information, gradient-information increases optimization speed. 
+Especially in optimizations with many degree of freedom, gradient-information increases optimization speed. 
 In the image, the surrogate fits the function almost perfectly with few observations.
 
-![surrogate image](https://github.com/ymahlau/bonni/blob/main/img/surrogate.png?raw=true)
+![surrogate image](https://github.com/ymahlau/bonni/blob/main/docs/source/_static/surrogate.png?raw=true)
 
 ## Installation
 
-You can install BONNI simply via `pip install bonni`
+You can install BONNI simply via 
+
+```bash
+pip install bonni
+```
+We recommend installing also the GPU-acceleration from JAX, which will massively increase speed:
+```bash
+pip install jax[cuda]
+```
+
 
 ## Usage
 
@@ -40,7 +52,7 @@ xs, ys, gs = optimize_bonni(
 )
 ```
 
-Additionally, BONNI includes a convenient wrapper for IPOPT, which can be difficult to install / use:
+Additionally, BONNI includes a convenient wrapper for IPOPT. The standard IPOPT package can be difficult to install/use, so we created a convenient wrapper shown below:
 
 ```python
 from bonni import optimize_ipopt
@@ -55,6 +67,10 @@ xs, ys, gs = optimize_ipopt(
     save_path=Path.cwd(),
 )
 ```
+
+## Documentation
+
+You can find the full extensive documentation of BONNI [here](https://bonni.readthedocs.io/en/latest/).
 
 
 ## Citation

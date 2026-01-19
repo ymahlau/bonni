@@ -3,3 +3,5 @@ uv.lock
 outputs/
 *.pyc
 *.npz
+docs/build
+docs/source/api
