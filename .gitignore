@@ -5,3 +5,4 @@ outputs/
 *.npz
 docs/build
 docs/source/api
+scripts_dev/

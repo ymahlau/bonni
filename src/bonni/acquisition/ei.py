@@ -182,39 +182,66 @@ class ExpectedImprovement:
     ):
         self.cfg = cfg
         
-    def calculate_offset(self, x_test: jax.Array, bounds: jax.Array, xs: jax.Array) -> jax.Array:
+    def calculate_offset(
+        self, 
+        x_test: jax.Array, 
+        bounds: jax.Array, 
+        xs: jax.Array,
+        sample_mask: jax.Array,
+    ) -> jax.Array:
         if self.cfg.penalty_mode == 'none':
             return jnp.asarray(self.cfg.offset)
+
         assert x_test.ndim == 1
         assert xs.ndim == 2
         assert xs.shape[1] == x_test.shape[0]
         
+        # --- FIX 1: Check actual sample count, not buffer size ---
+        # xs.shape[0] includes padding. We sum the mask to get real count.
+        num_valid_samples = jnp.sum(sample_mask)
+
+        # Note: If you want to return early inside a JIT function, you usually can't.
+        # Instead, we will compute the penalty and mask it out at the end if the condition is met.
         if self.cfg.stop_penalty_after is not None and xs.shape[0] > self.cfg.stop_penalty_after:
             return jnp.asarray(self.cfg.offset)
         
         if self.cfg.penalty_mode == 'distance':
+            # 1. Calculate Distances to ALL points (including padding)
             distances = jnp.sqrt(jnp.sum(jnp.square(x_test[None, :] - xs), axis=-1))
-            # distances = jnp.sum(jnp.abs(x_test[None, :] - xs), axis=-1)
-            # closest_idx = jnp.argmin(l2_distances)
+            
+            # --- FIX 2: Mask out padded samples ---
+            # Set distance to invalid samples to Infinity so jnp.min ignores them.
+            # (Otherwise, padded zeros look like a neighbor at the origin).
+            distances = jnp.where(sample_mask, distances, jnp.inf)
+            
+            # Find distance to closest VALID neighbor
             point_distance = jnp.min(distances)
-            assert isinstance(point_distance, jax.Array)
-            # edge_distance = get_distance_to_edge(xs, bounds, x_test)
+            
+            # Handle edge case: if NO valid samples exist (all mask False), point_distance is inf.
+            # We clamp it or handle it. 
+            # If inf (first iter), logic below (1 - edge/inf) -> 1.0 -> Max Penalty. 
+            # This makes sense (don't trust anything yet), or you might want 0 penalty.
+            
             ld, ud = x_test - bounds[:, 0], bounds[:, 1] - x_test
             min_d = jnp.minimum(ld, ud)
-            # edge_distance = jnp.linalg.norm(min_d)
             edge_distance = jnp.min(min_d)
             edge_distance = jnp.where(edge_distance < 1e-6, 1e-6, edge_distance)
-            # edge_distance = jnp.where(jnp.min(min_d) < 1e-6, 1e-6, jnp.linalg.norm(min_d))
-            assert isinstance(edge_distance, jax.Array)
-            # jnp.where(min_distance)
             
             threshold = (point_distance + edge_distance) * self.cfg.neighbor_threshold
             threshold = jnp.where(threshold < 1e-6, 1e-6, threshold)
-            assert isinstance(threshold, jax.Array)
+            
             penalty_factor = jnp.maximum(1 - edge_distance / threshold, 0)
-            return penalty_factor * self.cfg.value_factor
+            result = penalty_factor * self.cfg.value_factor
+
+            # Apply the "stop_penalty_after" logic via masking
+            if self.cfg.stop_penalty_after is not None:
+                is_active = num_valid_samples <= self.cfg.stop_penalty_after
+                # If active, return result. If not, return default offset.
+                return jnp.where(is_active, result, self.cfg.offset)
+            
+            return result
         
-        # bounds penalty
+        # bounds penalty (Mask irrelevant here as it only uses x_test and bounds)
         half_value_position = self.cfg.boundary_penalty_start / 2
         normalized_x = (x_test - bounds[:, 0]) / (bounds[:, 1] - bounds[:, 0])
         centered_distance = jnp.abs(normalized_x - 0.5)
@@ -225,13 +252,18 @@ class ExpectedImprovement:
         is_mid_range = (mid_start >= centered_distance) & (centered_distance > mid_end)
         mid_range_position = (centered_distance - mid_start) / (mid_end - mid_start)
         
-        # y_range = jnp.max(ys) - jnp.min(ys)
         value = self.cfg.value_factor
         cur_offset = jnp.ones_like(x_test) * self.cfg.offset
         cur_offset = jnp.where(is_outer_range, (1-outer_range_position)*0.5*value + 0.5*value, cur_offset)
         cur_offset = jnp.where(is_mid_range, (1-mid_range_position)*(0.5*value-self.cfg.offset) + self.cfg.offset, cur_offset)
         
         mean_offset = jnp.mean(cur_offset)
+
+        # Apply Stop Penalty logic for bounds mode too
+        if self.cfg.stop_penalty_after is not None:
+            is_active = num_valid_samples <= self.cfg.stop_penalty_after
+            return jnp.where(is_active, mean_offset, self.cfg.offset)
+
         return mean_offset
         
         
@@ -245,25 +277,47 @@ class ExpectedImprovement:
         model: MLPEnsemble,
         embedding: SinCosActionEmbedding,
         key: jax.Array,
+        sample_mask: jax.Array,
     ) -> jax.Array:
         assert x_test.ndim == 1
         assert x_test.shape[0] == bounds.shape[0]
         
-        # model forward
+        # 1. Model Forward
         obs_test = embedding(x_test, bounds)
         pred = model.apply(params, obs_test, rngs=key)
         assert pred.ndim == 1 and pred.shape[0] == model.cfg.num_models
         
-        # calculate mean and std
-        mean, std = jnp.mean(pred), jnp.std(pred)
-        if ys.size > 1:
-            mean = mean * ys.std()
-            std = std * ys.std()
-        mean = mean + ys.mean()
+        # 2. Robust Statistics Calculation
+        # We must ignore the padded values in ys to get the real Mean/Std
+        y_safe = jnp.nan_to_num(ys, nan=0.0)
         
-        # Calculate ei
-        cur_offset = self.calculate_offset(x_test, bounds, xs)
-        ymax = np.max(ys, axis=-1) + cur_offset
+        # Use the mask to calculate stats of only valid data
+        y_mean = jnp.mean(y_safe, where=sample_mask)
+        y_std = jnp.std(y_safe, where=sample_mask)
+        
+        # Safety: If we have 0 or 1 samples, std might be 0 or nan. 
+        # Clamp to 1.0 to avoid division/multiplication issues.
+        y_std = jnp.where(y_std < 1e-8, 1.0, y_std)
+        
+        # Un-normalize the model predictions
+        mean_pred = jnp.mean(pred)
+        std_pred = jnp.std(pred)
+        
+        # Apply transformation
+        mean = mean_pred * y_std + y_mean
+        std = std_pred * y_std
+        
+        # 3. Calculate Offset
+        cur_offset = self.calculate_offset(x_test, bounds, xs, sample_mask=sample_mask)
+        
+        # 4. Calculate Y_Max
+        # We mask invalid values with -Infinity so they are never chosen as Max (Assuming maximization)
+        y_masked_for_max = jnp.where(sample_mask, y_safe, -jnp.inf)
+        ymax = jnp.max(y_masked_for_max)
+        
+        # Add offset (penalty)
+        ymax = ymax + cur_offset
+        
         result = log_expected_improvement(mean, std, ymax)
         
         return result

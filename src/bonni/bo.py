@@ -31,9 +31,33 @@ def bo_loop(
     surrogate_plot_directory: Path | None,
     num_acq_optim_samples: int,
     num_embedding_channels: int,
+    num_iter_until_recompile: int,
 ):
     num_actions = bounds.shape[0]
+    cur_num_samples = xs.shape[0]
+
+    # Create the mask: True for valid data, False for the buffer
+    cur_mask = np.zeros(cur_num_samples, dtype=bool)
+    cur_mask[:cur_num_samples] = True
+
+    # Track the actual index we are filling
+    next_idx = cur_num_samples
+    
     for idx in tqdm(range(samples_after_init)):
+        # If we have filled the buffer, extend it by another chunk.
+        # This changes the array shape and triggers ONE recompilation for the next batch.
+        if next_idx >= len(cur_mask):
+            extra_pad = num_iter_until_recompile
+            
+            # Pad arrays
+            xs = np.pad(xs, ((0, extra_pad), (0, 0)), constant_values=0)
+            ys = np.pad(ys, ((0, extra_pad)), constant_values=0)
+            gs = np.pad(gs, ((0, extra_pad), (0, 0)), constant_values=0)
+            
+            # Extend mask
+            new_mask_chunk = np.zeros(extra_pad, dtype=bool)
+            cur_mask = np.concatenate([cur_mask, new_mask_chunk])
+        
         # train ensemble surrogate
         key, subkey = jax.random.split(key)
         train_fn = jax.jit(full_regression_training_bnn, static_argnames=["model_cfg", "optim_cfg", "num_embedding_channels"])
@@ -43,6 +67,7 @@ def bo_loop(
             y=jnp.asarray(ys),
             g=jnp.asarray(gs),
             bounds=jnp.asarray(bounds),
+            sample_mask=jnp.asarray(cur_mask),
             model_cfg=ensemble_cfg,
             optim_cfg=optim_cfg,
             num_embedding_channels=num_embedding_channels,
@@ -63,6 +88,7 @@ def bo_loop(
             num_embedding_channels=num_embedding_channels,
             ei_cfg=ei_cfg,
             ensemble_cfg=ensemble_cfg,
+            sample_mask=cur_mask,
         )
         
         # visualize results (optionally)
@@ -79,13 +105,21 @@ def bo_loop(
                 ei_cfg=ei_cfg,
                 ensemble_cfg=ensemble_cfg,
                 next_point=new_x,
+                sample_mask=cur_mask,
             )
         
         # sample new point
         new_y, new_grads = fn(new_x)
-        xs = np.concatenate([xs, new_x[None, :]], axis=0)
-        ys = np.concatenate([ys, new_y[None]], axis=0)
-        gs = np.concatenate([gs, new_grads[None, :]], axis=0)
         
+        # Update the padded arrays at the current index
+        xs[next_idx] = new_x
+        ys[next_idx] = new_y
+        gs[next_idx] = new_grads
+        
+        # Update the mask to mark this new point as valid
+        cur_mask[next_idx] = True
+        
+        # Increment index for next iteration
+        next_idx += 1
         
     return xs, ys, gs

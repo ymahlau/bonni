@@ -20,6 +20,7 @@ class AcqFnWrapper:
         ensemble_cfg: MLPEnsembleConfig,
         params,
         key: jax.Array,
+        sample_mask: np.ndarray,
     ):
         self.xs = jnp.asarray(xs)
         self.ys = jnp.asarray(ys)
@@ -32,19 +33,22 @@ class AcqFnWrapper:
         self.embedding = SinCosActionEmbedding(num_channels=num_embedding_channels)
         self.model = MLPEnsemble(ensemble_cfg)
         self.key = key
+        self.sample_mask = sample_mask
     
     def _forward(self, x_local: jax.Array) -> jax.Array:
         key, subkey = jax.random.split(self.key)
         self.key = key
-        acq_value = self.af(
+        jitted_af = jax.jit(self.af, static_argnames=["model", "embedding"])
+        acq_value = jitted_af(
             x_test=x_local,
-            xs=self.xs,
-            ys=self.ys,
-            bounds=self.bounds,
+            xs=jnp.asarray(self.xs),
+            ys=jnp.asarray(self.ys),
+            bounds=jnp.asarray(self.bounds),
             params=self.params,
             model=self.model,
             embedding=self.embedding,
             key=subkey,
+            sample_mask=jnp.asarray(self.sample_mask),
         )
         return acq_value
     
@@ -76,6 +80,7 @@ def optimize_acquisition_ipopt(
     num_embedding_channels: int,
     ei_cfg: EIConfig,
     ensemble_cfg: MLPEnsembleConfig,
+    sample_mask: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray]:
     key, subkey = jax.random.split(key)
     acq_wrapper = AcqFnWrapper(
@@ -87,6 +92,7 @@ def optimize_acquisition_ipopt(
         ensemble_cfg=ensemble_cfg,
         params=params,
         key=subkey,
+        sample_mask=sample_mask,
     )
     
     num_actions = bounds.shape[0]

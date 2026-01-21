@@ -23,6 +23,7 @@ def optimize_bonni(
     xs: np.ndarray | jax.Array | None = None,
     ys: np.ndarray | jax.Array | None = None,
     gs: np.ndarray | jax.Array | None = None,
+    num_iter_until_recompile: int = 50,
     ensemble_size: int = 20,
     training_plot_directory: Path | None = None,
     surrogate_plot_directory: Path | None = None,
@@ -60,6 +61,10 @@ def optimize_bonni(
             if `xs` and `gs` are provided. Defaults to None.
         gs (np.ndarray | jax.Array | None, optional): Existing history of gradients. Must be provided if `xxs` and `ys` 
             are provided. Defaults to None.
+        num_iter_until_recompile (int, optional): The number of optimization iterations, where jax does not recompile functions.
+            Recompilation makes the execution faster, but also takes a lot of time. Therefore, the number of recompilations is a
+            hyperparameter that can be tuned for speed (depending on hardware, other parameters and JAX version).
+            Defaults to 50.
         ensemble_size (int, optional): The number of individual MLP models to train within
             the ensemble surrogate. Defaults to 20.
         training_plot_directory (Path | None, optional): Directory to save plots related
@@ -175,6 +180,7 @@ def optimize_bonni(
             g_list.append(cur_g)
     
     assert x_list, f"Need to either specify random sample count or provide previous samples, got {num_random_samples=} and {num_prev_samples=}"
+    assert len(x_list) >= 2, "Bonni needs at least two samples to start optimization"
     xs = np.asarray(x_list, dtype=float)
     ys = np.asarray(y_list, dtype=float)
     gs = np.asarray(g_list, dtype=float)
@@ -194,6 +200,7 @@ def optimize_bonni(
         surrogate_plot_directory=surrogate_plot_directory,
         num_acq_optim_samples=num_acq_optim_samples,
         num_embedding_channels=num_embedding_channels,
+        num_iter_until_recompile=num_iter_until_recompile,
     )
     
     return xs, ys, gs
