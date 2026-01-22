@@ -32,6 +32,7 @@ def optimize_bonni(
     custom_optim_config: OptimConfig | None = None,
     custom_base_model_config: MLPModelConfig | None = None,
     num_embedding_channels: int = 1,
+    non_diff_params: np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Optimize any black-box function with BONNI.
@@ -39,8 +40,8 @@ def optimize_bonni(
 
     Args:
         fn (Callable[[np.ndarray], tuple[np.ndarray, np.ndarray]]): The black-box objective function to optimize. It must accept
-            an input array of shape (num_dims,) and return a tuple `(y, g)`, where `y` is the scalar objective
-            and `g` represents gradients or auxiliary outputs of shape (num_dims,).
+            an input array of shape (D,) and return a tuple `(y, g)`, where `y` is the scalar objective
+            and `g` represents gradients or auxiliary outputs of shape (D,). D represents the number of dimensions.
         bounds (jax.Array | np.ndarray): A 2D array of shape `(D, 2)` specifying the
             (lower, upper) search space boundaries for each of the `D` input dimensions.
         num_bonni_iterations (int): The number of Bayesian Optimization steps (active
@@ -82,12 +83,17 @@ def optimize_bonni(
             configuration for the individual MLP models. Defaults to None.
         num_embedding_channels (int, optional): The number of embedding channels used in
             the model input layer. Defaults to 1.
+        non_diff_params (np.ndarray | None, optional): A boolean mask of shape `(D,)` indicating 
+            which parameters are non-differentiable (True) or differentiable (False). 
+            Defaults to None (all assumed differentiable). Note that the function fn still needs to return an array of
+            shape (D,) for the gradients, but the values for non-diff. parameters can be arbitrary.
 
     Returns:
         tuple[np.ndarray, np.ndarray, np.ndarray]: A tuple containing the full history of:
             - `xs`: Input parameters (shape `(N, D)`).
             - `ys`: Objective values (shape `(N,)`).
             - `gs`: Gradients/Auxiliary outputs (shape `(N, D)`).
+            Here D is the number of dimensions and N the sample count.
 
     """
     assert num_bonni_iterations > 0
@@ -109,6 +115,14 @@ def optimize_bonni(
     else:
         raise Exception(f"Invalid seed: {seed}")
     
+    # Validate non_diff_params
+    if non_diff_params is not None:
+        non_diff_params = np.asarray(non_diff_params, dtype=bool)
+        assert non_diff_params.ndim == 1 and non_diff_params.shape[0] == num_actions, \
+            f"non_diff_params must be a 1D boolean array of shape ({num_actions},), got {non_diff_params.shape}"
+    else:
+        non_diff_params = np.zeros(shape=(num_actions,), dtype=bool)
+
     # custom input configs
     if custom_ei_config is None:
         ei_cfg = EIConfig()
@@ -201,6 +215,7 @@ def optimize_bonni(
         num_acq_optim_samples=num_acq_optim_samples,
         num_embedding_channels=num_embedding_channels,
         num_iter_until_recompile=num_iter_until_recompile,
+        non_diff_params=non_diff_params,
     )
     
     return xs, ys, gs

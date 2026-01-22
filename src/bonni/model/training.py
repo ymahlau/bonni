@@ -17,6 +17,7 @@ def full_regression_training_bnn(
     g: jax.Array,
     bounds: jax.Array,
     sample_mask: jax.Array,
+    non_diff_params: jax.Array,
     model_cfg: MLPEnsembleConfig,
     optim_cfg: OptimConfig,
     num_embedding_channels: int,
@@ -35,6 +36,8 @@ def full_regression_training_bnn(
         assert g.shape == x.shape
     assert sample_mask.ndim == 1
     assert sample_mask.shape[0] == num_samples
+    assert non_diff_params.ndim == 1
+    assert non_diff_params.shape[0] == num_actions
     
     # --- Model Init ---
     embedding = SinCosActionEmbedding(num_channels=num_embedding_channels)
@@ -70,6 +73,8 @@ def full_regression_training_bnn(
     # Normalize G
     if g is not None:
         g = g / y_std
+    g = jnp.where(jnp.isnan(g) & non_diff_params, 0.0, g)
+    g = jnp.where(jnp.isinf(g) & non_diff_params, 0.0, g)
 
     def train_step(carry, _):
         ts_train, key = carry
@@ -93,22 +98,12 @@ def full_regression_training_bnn(
             sk_list = jax.random.split(sk, num_samples)
             
             # --- Forward / Gradient Calculation ---
-            if g_batch is not None:
-                # calculate gradient and result in one go
-                fn = jax.vmap(jax.value_and_grad(_gradient_helper), in_axes=[None, 0, None])
-                full_fn = jax.vmap(fn, in_axes=[0, None, 0])
-                results, grads = full_fn(x_batch, params, sk_list)
-                assert isinstance(results, jax.Array) and isinstance(grads, jax.Array)
-                results = results.reshape(num_samples, model_cfg.num_models)
-                grads = grads.reshape(num_samples, model_cfg.num_models, num_actions)
-            else:
-                # only calculate forward results, not gradient
-                fn = jax.vmap(_gradient_helper, in_axes=[None, 0, None])
-                full_fn = jax.vmap(fn, in_axes=[0, None, 0])
-                results = full_fn(x_batch, params, sk_list)
-                
-                results = results.reshape(num_samples, model_cfg.num_models)
-                grads = None
+            fn = jax.vmap(jax.value_and_grad(_gradient_helper), in_axes=[None, 0, None])
+            full_fn = jax.vmap(fn, in_axes=[0, None, 0])
+            results, grads = full_fn(x_batch, params, sk_list)
+            assert isinstance(results, jax.Array) and isinstance(grads, jax.Array)
+            results = results.reshape(num_samples, model_cfg.num_models)
+            grads = grads.reshape(num_samples, model_cfg.num_models, num_actions)
             
             info = {}
             # --- 2. MASKED LOSS CALCULATION ---
@@ -120,14 +115,15 @@ def full_regression_training_bnn(
             info['loss'] = loss
             
             # B. Gradient Loss
-            if grads is not None:
-                grad_sq_error = (g_batch[:, None, :] - grads) ** 2
-                
-                grad_mask_expanded = sample_mask[:, None, None]
-                grad_loss = jnp.mean(grad_sq_error, where=grad_mask_expanded)
-                
-                info['grad_loss'] = grad_loss
-                loss = loss + grad_loss
+            
+            grad_sq_error = (g_batch[:, None, :] - grads) ** 2
+            
+            grad_mask_expanded = sample_mask[:, None, None]
+            grad_mask_expanded = grad_mask_expanded & (~non_diff_params[None, None, :])
+            grad_loss = jnp.mean(grad_sq_error, where=grad_mask_expanded)
+            
+            info['grad_loss'] = grad_loss
+            loss = loss + grad_loss
             
             info['full_loss'] = loss
             return loss, info

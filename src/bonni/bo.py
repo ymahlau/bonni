@@ -32,6 +32,7 @@ def bo_loop(
     num_acq_optim_samples: int,
     num_embedding_channels: int,
     num_iter_until_recompile: int,
+    non_diff_params: np.ndarray,
 ):
     num_actions = bounds.shape[0]
     cur_num_samples = xs.shape[0]
@@ -68,6 +69,7 @@ def bo_loop(
             g=jnp.asarray(gs),
             bounds=jnp.asarray(bounds),
             sample_mask=jnp.asarray(cur_mask),
+            non_diff_params=jnp.asarray(non_diff_params, dtype=jnp.bool),
             model_cfg=ensemble_cfg,
             optim_cfg=optim_cfg,
             num_embedding_channels=num_embedding_channels,
