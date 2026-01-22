@@ -152,7 +152,7 @@ class EIConfig:
 
     Attributes:
         offset (float): Offset for increasing the exploration during optimization. by default this is a small positive
-            value. Defaults to 1e-3.
+            value. Defaults to 1e-4.
         stop_penalty_after (int | None): Number of optimization iterations, after which no more penalty is applied. 
             We recommend setting this to half the number of total iterations. Defaults to None. 
         penalty_mode (Literal['none', 'bounds', 'distance']): Mode for penalizing different sampling behavior. 
@@ -167,7 +167,7 @@ class EIConfig:
         bounds_threshold (float): Penalty threshold for the bounds mode. This has to be a value in the range [0, 0.5]. 
             Defaults to 0.25.
     """
-    offset: float = 1e-3
+    offset: float = 1e-4
     penalty_mode: Literal['none', 'bounds', 'distance'] = 'none'
     stop_penalty_after: int | None = None
     neighbor_threshold: float = 0.3
