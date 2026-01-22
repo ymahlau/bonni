@@ -33,8 +33,8 @@ class OptimConfig:
     """
     total_steps: int
     warmup_steps: int | None = None
-    peak_lr: float = 1e-9
-    final_lr: float = 1e-3
+    peak_lr: float = 1e-3
+    final_lr: float = 1e-9
     init_lr: float = 1e-5
     fixed_lr: float | None = None
     clip_grad_norm: float | None = 1.0
