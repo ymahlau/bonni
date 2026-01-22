@@ -13,5 +13,6 @@ def plot_info(
         plt.clf()
         seaborn.set_theme(style='whitegrid')
         plt.plot(v)
+        plt.yscale('log')
         plt.tight_layout()
         plt.savefig(directory / f"{k}_{iter}.png")
