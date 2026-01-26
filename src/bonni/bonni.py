@@ -15,7 +15,8 @@ from bonni.model.optim import OptimConfig
 def optimize_bonni(
     fn: INPUT_FN_TYPE,
     bounds: jax.Array | np.ndarray,
-    num_bonni_iterations: int,
+    max_fn_evaluations: int,
+    max_bonni_iterations: int | None = None,
     num_random_samples: int | None = None,
     direction: Literal["maximize", "minimize"] = "minimize",
     seed: int | jax.Array | None = None,
@@ -33,6 +34,7 @@ def optimize_bonni(
     custom_base_model_config: MLPModelConfig | None = None,
     num_embedding_channels: int = 1,
     non_diff_params: np.ndarray | None = None,
+    max_num_local_samples: int = 1, 
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Optimize any black-box function with BONNI.
@@ -44,8 +46,10 @@ def optimize_bonni(
             and `g` represents gradients or auxiliary outputs of shape (D,). D represents the number of dimensions.
         bounds (jax.Array | np.ndarray): A 2D array of shape `(D, 2)` specifying the
             (lower, upper) search space boundaries for each of the `D` input dimensions.
-        num_bonni_iterations (int): The number of Bayesian Optimization steps (active
-            learning iterations) to perform after initialization. Must be > 0.
+        max_fn_evaluations (int): The maximum number of function evalutaions performed by Bonni optimization.
+            This includes the function evaluation done by local search each iteration. Must be greater than zero.
+        max_bonni_iterations (int | None, optional): The number of Bayesian Optimization steps (active
+            learning iterations) to perform after initialization. Must be > 0 if specified. Defaults to None.
         num_random_samples (int | None, optional): The number of initial random samples to
             evaluate before starting the BO loop. If `xs`/`ys`/`gs` are not provided, this
             must be specified and non-zero. Defaults to None.
@@ -87,6 +91,9 @@ def optimize_bonni(
             which parameters are non-differentiable (True) or differentiable (False). 
             Defaults to None (all assumed differentiable). Note that the function fn still needs to return an array of
             shape (D,) for the gradients, but the values for non-diff. parameters can be arbitrary.
+        max_num_local_samples (int, optional): Maximum number of local search samples used in every iteration. Local search
+            is performed by IPOPT if specified number is greater than one. If the specified number is one, then a simple
+            function evaluation is performed at the sampling point computed by BONNI in every iteration. Defaults to 1.
 
     Returns:
         tuple[np.ndarray, np.ndarray, np.ndarray]: A tuple containing the full history of:
@@ -96,8 +103,11 @@ def optimize_bonni(
             Here D is the number of dimensions and N the sample count.
 
     """
-    assert num_bonni_iterations > 0
+    assert max_fn_evaluations > 0
+    if max_bonni_iterations is not None:
+        assert max_bonni_iterations > 0
     assert bounds.ndim == 2 and bounds.shape[1] == 2, "bounds needs to be array of shape (degree_of_freedom, 2)"
+    assert max_num_local_samples >= 1, "Number of local search iterations need to be >= 1"
     num_actions = bounds.shape[0]
     
     if save_path is not None and isinstance(save_path, str):
@@ -206,7 +216,8 @@ def optimize_bonni(
         xs=xs,
         ys=ys,
         gs=gs,
-        samples_after_init=num_bonni_iterations,
+        samples_after_init=max_fn_evaluations,
+        max_iteration_count=max_bonni_iterations,
         ei_cfg=ei_cfg,
         ensemble_cfg=model_cfg,
         optim_cfg=optim_cfg,
@@ -216,6 +227,7 @@ def optimize_bonni(
         num_embedding_channels=num_embedding_channels,
         num_iter_until_recompile=num_iter_until_recompile,
         non_diff_params=non_diff_params,
+        max_num_local_samples=max_num_local_samples,
     )
     
     return xs, ys, gs

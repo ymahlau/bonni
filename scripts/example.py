@@ -27,7 +27,8 @@ def train_bonni():
     optimize_bonni(
         fn=fn,
         bounds=fn.bounds,
-        num_bonni_iterations=5,
+        max_fn_evaluations=20,
+        max_num_local_samples=3,
         num_random_samples=2,
         direction="maximize",
         save_path=Path.cwd(),
@@ -44,14 +45,16 @@ def fn(x: np.ndarray):
     return value, grad
 
 def optimize_fn():
+    change_to_timestamped_dir()
     optimize_bonni(
         fn=fn,
         bounds=np.asarray([[-1, 1], [0, 1]], dtype=float),
-        num_bonni_iterations=5,
+        max_fn_evaluations=20,
         num_random_samples=2,
         direction="minimize",
         save_path=Path.cwd(),
         seed=42,
+        max_num_local_samples=1,
     )
 
 
@@ -62,12 +65,11 @@ def optimize_fn_ipopt():
         bounds=np.asarray([[-1, 1], [0, 1]], dtype=float),
         # IPOPT performs line search each iteration, such that the number 
         # of iterations and fn_eval may not be the same
-        max_fn_eval=5,
-        max_iterations=3,
+        max_fn_eval=10,
         direction="maximize",
         save_path=Path.cwd(),
     )
 
 
 if __name__ == '__main__':
-    optimize_fn_ipopt()
+    train_bonni()
