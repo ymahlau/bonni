@@ -91,7 +91,7 @@ def optimize_bonni(
             shape (D,) for the gradients, but the values for non-diff. parameters can be arbitrary.
         num_acq_optim_runs (int, optional): The number of indepent acquisition function optimization runs that are
             performed. Since optimizing the acq. fn. is a difficult problem, restarts can increase sample quality 
-            greatly. Defaults to 1.
+            greatly. Defaults to 5.
         num_initial_acq_samples (int, optional): Number of random samples, where the maximum is selected as startpoint
             for optimizing the acquisition function. Defaults to 10.
 
