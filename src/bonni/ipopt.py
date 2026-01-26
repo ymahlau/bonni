@@ -16,7 +16,7 @@ def optimize_ipopt(
     save_path: Path | str | None = None,
     tol: float = 1e-8,
     direction: Literal["maximize", "minimize"] = "minimize",
-    bounds_eps: float = 1e-6,
+    bound_contract_ratio: float = 1e-3,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Optimize a black-box function using the Interior Point Optimizer (IPOPT).
@@ -42,10 +42,10 @@ def optimize_ipopt(
             evaluation as an npz-file. Defaults to None.
         tol (float, optional): The tolerance for convergence. Defaults to 1e-8.
         direction (Literal["maximize", "minimize"], optional): The optimization goal. Defaults to "minimize".
-        bounds_eps (float, optional): A small epsilon value used to contract the provided bounds 
-            slightly (bounds +/- eps). This prevents the interior point method from 
+        bound_contract_ratio (float, optional): A small epsilon value used to contract the provided bounds 
+            slightly (bounds +/- eps * bound_range). This prevents the interior point method from 
             starting or evaluating exactly on the boundary, which can cause numerical issues. 
-            Defaults to 1e-6.
+            Defaults to 1e-3.
 
     Returns:
         tuple[np.ndarray, np.ndarray, np.ndarray]: A tuple containing the full history of:
@@ -65,7 +65,7 @@ def optimize_ipopt(
     
     wrapper = FunctionWrapper(
         fn, 
-        bounds, 
+        np.copy(bounds).astype(float),
         negate=(direction=="maximize"),
         max_fn_eval=max_fn_eval,
         save_path=save_path,
@@ -74,8 +74,11 @@ def optimize_ipopt(
     options = {}
     if max_iterations is not None:
         options['maxiter'] = max_iterations
+        
     
-    bounds_ipopt = np.copy(bounds)
+    bounds_ipopt = np.copy(bounds).astype(float)
+    bounds_range = bounds_ipopt[:, 1] - bounds_ipopt[:, 0]
+    bounds_eps = bounds_range * bound_contract_ratio / 2
     bounds_ipopt[:, 0] += bounds_eps
     bounds_ipopt[:, 1] -= bounds_eps
     
