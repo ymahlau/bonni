@@ -33,6 +33,8 @@ def bo_loop(
     num_embedding_channels: int,
     num_iter_until_recompile: int,
     non_diff_params: np.ndarray,
+    num_acq_runs: int,
+    num_initial_acq_samples: int,
 ):
     num_actions = bounds.shape[0]
     cur_num_samples = xs.shape[0]
@@ -91,6 +93,8 @@ def bo_loop(
             ei_cfg=ei_cfg,
             ensemble_cfg=ensemble_cfg,
             sample_mask=cur_mask,
+            num_runs=num_acq_runs,
+            num_initial_random_samples=num_initial_acq_samples,
         )
         
         # visualize results (optionally)

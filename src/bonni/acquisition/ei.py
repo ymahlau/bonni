@@ -276,7 +276,6 @@ class ExpectedImprovement:
         params,
         model: MLPEnsemble,
         embedding: SinCosActionEmbedding,
-        key: jax.Array,
         sample_mask: jax.Array,
     ) -> jax.Array:
         assert x_test.ndim == 1
@@ -284,7 +283,7 @@ class ExpectedImprovement:
         
         # 1. Model Forward
         obs_test = embedding(x_test, bounds)
-        pred = model.apply(params, obs_test, rngs=key)
+        pred = model.apply(params, obs_test)
         assert pred.ndim == 1 and pred.shape[0] == model.cfg.num_models
         
         # 2. Robust Statistics Calculation

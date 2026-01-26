@@ -41,7 +41,6 @@ def visualize_bo_1d(
     y_std = jnp.where(y_std < 1e-8, 1.0, y_std)
     
     # --- 2. Compute Acquisition Data ---
-    key, subkey = jax.random.split(key)
     acq_wrapper = AcqFnWrapper(
         xs=xs,
         ys=ys,
@@ -50,7 +49,6 @@ def visualize_bo_1d(
         ei_cfg=ei_cfg,
         ensemble_cfg=ensemble_cfg,
         params=params,
-        key=subkey,
         sample_mask=sample_mask, # Pass mask to wrapper
     )
     min_a, max_a = bounds[0, 0].item(), bounds[0, 1].item()

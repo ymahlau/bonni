@@ -27,12 +27,14 @@ def optimize_bonni(
     ensemble_size: int = 20,
     training_plot_directory: Path | None = None,
     surrogate_plot_directory: Path | None = None,
-    num_acq_optim_samples: int = 200,
+    num_acq_optim_samples: int = 100,
     custom_ei_config: EIConfig | None = None,
     custom_optim_config: OptimConfig | None = None,
     custom_base_model_config: MLPModelConfig | None = None,
     num_embedding_channels: int = 1,
     non_diff_params: np.ndarray | None = None,
+    num_acq_optim_runs: int = 5,
+    num_initial_acq_samples: int = 10,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Optimize any black-box function with BONNI.
@@ -74,7 +76,7 @@ def optimize_bonni(
             of the surrogate landscape. This is only available if the dimensionality of the function is 1. 
             Defaults to None.
         num_acq_optim_samples (int, optional): The number of samples used to optimize the
-            acquisition function during each step. Defaults to 200.
+            acquisition function during each step. Defaults to 100.
         custom_ei_config (EIConfig | None, optional): Custom configuration for the Expected
             Improvement acquisition function. Defaults to None.
         custom_optim_config (OptimConfig | None, optional): Custom configuration for the
@@ -87,6 +89,11 @@ def optimize_bonni(
             which parameters are non-differentiable (True) or differentiable (False). 
             Defaults to None (all assumed differentiable). Note that the function fn still needs to return an array of
             shape (D,) for the gradients, but the values for non-diff. parameters can be arbitrary.
+        num_acq_optim_runs (int, optional): The number of indepent acquisition function optimization runs that are
+            performed. Since optimizing the acq. fn. is a difficult problem, restarts can increase sample quality 
+            greatly. Defaults to 1.
+        num_initial_acq_samples (int, optional): Number of random samples, where the maximum is selected as startpoint
+            for optimizing the acquisition function. Defaults to 10.
 
     Returns:
         tuple[np.ndarray, np.ndarray, np.ndarray]: A tuple containing the full history of:
@@ -216,6 +223,8 @@ def optimize_bonni(
         num_embedding_channels=num_embedding_channels,
         num_iter_until_recompile=num_iter_until_recompile,
         non_diff_params=non_diff_params,
+        num_acq_runs=num_acq_optim_runs,
+        num_initial_acq_samples=num_initial_acq_samples,
     )
     
     return xs, ys, gs

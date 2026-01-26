@@ -19,7 +19,6 @@ class AcqFnWrapper:
         ei_cfg: EIConfig,
         ensemble_cfg: MLPEnsembleConfig,
         params,
-        key: jax.Array,
         sample_mask: np.ndarray,
     ):
         self.xs = jnp.asarray(xs)
@@ -32,12 +31,9 @@ class AcqFnWrapper:
         self.af = ExpectedImprovement(ei_cfg)
         self.embedding = SinCosActionEmbedding(num_channels=num_embedding_channels)
         self.model = MLPEnsemble(ensemble_cfg)
-        self.key = key
         self.sample_mask = sample_mask
     
     def _forward(self, x_local: jax.Array) -> jax.Array:
-        key, subkey = jax.random.split(self.key)
-        self.key = key
         jitted_af = jax.jit(self.af, static_argnames=["model", "embedding"])
         acq_value = jitted_af(
             x_test=x_local,
@@ -47,7 +43,6 @@ class AcqFnWrapper:
             params=self.params,
             model=self.model,
             embedding=self.embedding,
-            key=subkey,
             sample_mask=jnp.asarray(self.sample_mask),
         )
         return acq_value
@@ -81,38 +76,53 @@ def optimize_acquisition_ipopt(
     ei_cfg: EIConfig,
     ensemble_cfg: MLPEnsembleConfig,
     sample_mask: np.ndarray,
+    num_runs: int,
+    num_initial_random_samples: int,
 ) -> tuple[np.ndarray, np.ndarray]:
-    key, subkey = jax.random.split(key)
-    acq_wrapper = AcqFnWrapper(
-        xs=xs,
-        ys=ys,
-        bounds=bounds,
-        num_embedding_channels=num_embedding_channels,
-        ei_cfg=ei_cfg,
-        ensemble_cfg=ensemble_cfg,
-        params=params,
-        key=subkey,
-        sample_mask=sample_mask,
-    )
+    max_af_value, best_new_sample = None, None
+    for _ in range(num_runs):
+        acq_wrapper = AcqFnWrapper(
+            xs=xs,
+            ys=ys,
+            bounds=bounds,
+            num_embedding_channels=num_embedding_channels,
+            ei_cfg=ei_cfg,
+            ensemble_cfg=ensemble_cfg,
+            params=params,
+            sample_mask=sample_mask,
+        )
+        
+        num_actions = bounds.shape[0]
+        key, subkey = jax.random.split(key)
+        random_actions = jax.random.uniform(subkey, shape=(num_initial_random_samples, num_actions,))
+        random_actions_np = np.asarray(random_actions, dtype=float)
+        action_ranges = bounds[:, 1] - bounds[:, 0]
+        all_x0 = random_actions_np * action_ranges + bounds[:, 0]
+        all_y0 = jax.vmap(acq_wrapper._forward)(jnp.asarray(all_x0))
+        
+        best_x0_idx = np.argmax(all_y0)
+        x0 = all_x0[best_x0_idx]
+        
+        ax, ay, _ = optimize_ipopt(
+            fn=acq_wrapper,
+            x0=x0,
+            bounds=bounds,
+            max_fn_eval=num_acq_optim_samples,
+            direction="maximize",
+        )
+        
+        max_idx = np.argmax(ay)
+        
+        cur_best_sample = ax[max_idx]
+        af_value = ay[max_idx]
+        if best_new_sample is None or af_value > max_af_value:
+            best_new_sample = cur_best_sample
+        if max_af_value is None or af_value > max_af_value:
+            max_af_value = af_value
     
-    num_actions = bounds.shape[0]
-    random_actions = jax.random.uniform(key, shape=(num_actions,))
-    random_actions_np = np.asarray(random_actions, dtype=float)
-    action_ranges = bounds[:, 1] - bounds[:, 0]
-    x0 = random_actions_np * action_ranges + bounds[:, 0]
-    
-    ax, ay, _ = optimize_ipopt(
-        fn=acq_wrapper,
-        x0=x0,
-        bounds=bounds,
-        max_fn_eval=num_acq_optim_samples,
-        direction="maximize",
-    )
-    
-    max_idx = np.argmax(ay)
-    best_new_sample = ax[max_idx]
-    af_value = ay[max_idx]
-    return best_new_sample, af_value
+    assert best_new_sample is not None
+    assert max_af_value is not None
+    return best_new_sample, max_af_value
     
     
     

@@ -34,6 +34,7 @@ def train_bonni():
         training_plot_directory=Path.cwd(),
         surrogate_plot_directory=Path.cwd(),
         seed=42,
+        num_acq_optim_runs=3,
     )
     
     
@@ -70,4 +71,4 @@ def optimize_fn_ipopt():
 
 
 if __name__ == '__main__':
-    optimize_fn_ipopt()
+    train_bonni()
