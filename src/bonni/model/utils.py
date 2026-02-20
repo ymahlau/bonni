@@ -11,8 +11,8 @@ class SkipConnectionType(Enum):
 
 
 def get_skip_connection(
-    in_channels: int, 
-    out_channels: int, 
+    in_channels: int,
+    out_channels: int,
     skip_type: SkipConnectionType,
 ):
     """Create a skip connection module."""
@@ -28,16 +28,17 @@ def get_skip_connection(
 
 class _LinearSkipConnection(nn.Module):
     """A linear skip connection implemented as a flax.linen Module."""
+
     in_features: int
     out_features: int
-    
+
     def setup(self):
         self.linear = nn.Dense(
             features=self.out_features,
             use_bias=False,
             kernel_init=nn.initializers.lecun_normal(),
         )
-    
+
     def __call__(self, x):
         return self.linear(x)
 
@@ -46,29 +47,30 @@ class ActivationType(Enum):
     """
     Enumeration of supported activation functions for neural network layers.
 
-    These values are used to configure the non-linearity applied after linear 
+    These values are used to configure the non-linearity applied after linear
     transformations in the model configuration.
 
     Attributes:
-        identity: Applies no activation (f(x) = x). typically used for the final 
+        identity: Applies no activation (f(x) = x). typically used for the final
             output layer to produce unbounded linear predictions.
-        gelu: Gaussian Error Linear Unit. A smooth approximation of ReLU often 
+        gelu: Gaussian Error Linear Unit. A smooth approximation of ReLU often
             used in Transformer architectures and modern MLPs.
-        relu: Rectified Linear Unit (f(x) = max(0, x)). A standard non-linear 
+        relu: Rectified Linear Unit (f(x) = max(0, x)). A standard non-linear
             activation that introduces sparsity.
-        leaky_relu: Leaky Rectified Linear Unit. Similar to ReLU but allows a 
+        leaky_relu: Leaky Rectified Linear Unit. Similar to ReLU but allows a
             small, non-zero gradient when the unit is not active.
-        sigmoid: Sigmoid function. Squashes values to the range [0, 1], often 
+        sigmoid: Sigmoid function. Squashes values to the range [0, 1], often
             used for binary classification probabilities.
         tanh: Hyperbolic Tangent. Squashes values to the range [-1, 1].
     """
+
     identity = "identity"
     gelu = "gelu"
     relu = "relu"
     leaky_relu = "leaky_relu"
     sigmoid = "sigmoid"
     tanh = "tanh"
-    
+
 
 def get_activation_fn(
     activation_type: ActivationType,
@@ -96,14 +98,15 @@ class InitType(Enum):
     Used primarily for `bias_init` in the model configuration.
 
     Attributes:
-        zeros: Initializes parameters to exactly 0. This is the standard practice 
+        zeros: Initializes parameters to exactly 0. This is the standard practice
             for bias terms in most neural network layers.
         ones: Initializes parameters to exactly 1.
         uniform: Initializes parameters with values drawn from a uniform distribution.
             The range is typically determined by the specific layer implementation.
-        normal: Initializes parameters with values drawn from a normal (Gaussian) 
+        normal: Initializes parameters with values drawn from a normal (Gaussian)
             distribution.
     """
+
     zeros = "zeros"
     ones = "ones"
     uniform = "uniform"
@@ -119,22 +122,20 @@ def get_init_fn(
         return nn.initializers.ones
     if init_type == InitType.uniform:
         scale = 0.01
-        def init(
-            key, 
-            shape, 
-            dtype=jnp.float64, 
-            out_sharding=None
-        ) -> jax.Array:
-            return jax.random.uniform(key, shape, dtype=dtype, out_sharding=out_sharding) * jnp.array(scale, dtype)
+
+        def init(key, shape, dtype=jnp.float64, out_sharding=None) -> jax.Array:
+            return jax.random.uniform(
+                key, shape, dtype=dtype, out_sharding=out_sharding
+            ) * jnp.array(scale, dtype)
+
         return jax.tree_util.Partial(init)
     if init_type == InitType.normal:
         scale = 0.1
-        def init(
-            key, 
-            shape, 
-            dtype=jnp.float64, 
-            out_sharding=None
-        ) -> jax.Array:
-            return jax.random.normal(key, shape, dtype=dtype, out_sharding=out_sharding) * jnp.array(scale, dtype)
+
+        def init(key, shape, dtype=jnp.float64, out_sharding=None) -> jax.Array:
+            return jax.random.normal(
+                key, shape, dtype=dtype, out_sharding=out_sharding
+            ) * jnp.array(scale, dtype)
+
         return jax.tree_util.Partial(init)
     raise ValueError(f"Invalid init type: {init_type}")

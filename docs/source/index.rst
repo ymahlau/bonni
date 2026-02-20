@@ -77,6 +77,30 @@ Additionally, BONNI includes a convenient wrapper for IPOPT. The standard IPOPT 
 
 For the full documentation, check out the API.
 
+Distributed Bragg Reflector
+---------------------------
+
+.. image:: https://github.com/ymahlau/bonni/blob/main/docs/source/_static/dbr.png?raw=true
+   :alt: dbr image
+
+This is a 10d optimization of the layer heights of a distributed Bragg Reflector for color correction in µ-LEDs.
+The target spectrum is a step function around 620nm wavelengths.
+Compared to other optimization algorithms, BONNI yields the best designs.
+For details, we refer to the paper.
+The full code for the optimization can be found at ``scripts/bragg_reflector.py``.
+
+Dual-Layer Grating Coupler
+--------------------------
+
+.. image:: https://github.com/ymahlau/bonni/blob/main/docs/source/_static/gc.png?raw=true
+   :alt: gc image
+
+This is a 62d optimization of the widths and gap sizes of a dual layer grating coupler.
+Compared to other optimization algorithms, BONNI yields the best designs.
+For details, we refer to the paper.
+The full code for the optimization can be found at ``scripts/grating_coupler.py``.
+
+
 Citation
 --------
 

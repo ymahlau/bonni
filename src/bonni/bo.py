@@ -45,25 +45,28 @@ def bo_loop(
 
     # Track the actual index we are filling
     next_idx = cur_num_samples
-    
+
     for idx in tqdm(range(samples_after_init)):
         # If we have filled the buffer, extend it by another chunk.
         # This changes the array shape and triggers ONE recompilation for the next batch.
         if next_idx >= len(cur_mask):
             extra_pad = num_iter_until_recompile
-            
+
             # Pad arrays
             xs = np.pad(xs, ((0, extra_pad), (0, 0)), constant_values=0)
             ys = np.pad(ys, ((0, extra_pad)), constant_values=0)
             gs = np.pad(gs, ((0, extra_pad), (0, 0)), constant_values=0)
-            
+
             # Extend mask
             new_mask_chunk = np.zeros(extra_pad, dtype=bool)
             cur_mask = np.concatenate([cur_mask, new_mask_chunk])
-        
+
         # train ensemble surrogate
         key, subkey = jax.random.split(key)
-        train_fn = jax.jit(full_regression_training_bnn, static_argnames=["model_cfg", "optim_cfg", "num_embedding_channels"])
+        train_fn = jax.jit(
+            full_regression_training_bnn,
+            static_argnames=["model_cfg", "optim_cfg", "num_embedding_channels"],
+        )
         train_state, info = train_fn(
             key=subkey,
             x=jnp.asarray(xs),
@@ -76,7 +79,7 @@ def bo_loop(
             optim_cfg=optim_cfg,
             num_embedding_channels=num_embedding_channels,
         )
-        
+
         if training_plot_directory is not None:
             plot_info(info, idx, training_plot_directory)
 
@@ -96,7 +99,7 @@ def bo_loop(
             num_runs=num_acq_runs,
             num_initial_random_samples=num_initial_acq_samples,
         )
-        
+
         # visualize results (optionally)
         if surrogate_plot_directory is not None and num_actions == 1:
             key, subkey = jax.random.split(key)
@@ -113,19 +116,19 @@ def bo_loop(
                 next_point=new_x,
                 sample_mask=cur_mask,
             )
-        
+
         # sample new point
         new_y, new_grads = fn(new_x)
-        
+
         # Update the padded arrays at the current index
         xs[next_idx] = new_x
         ys[next_idx] = new_y
         gs[next_idx] = new_grads
-        
+
         # Update the mask to mark this new point as valid
         cur_mask[next_idx] = True
-        
+
         # Increment index for next iteration
         next_idx += 1
-        
+
     return xs, ys, gs

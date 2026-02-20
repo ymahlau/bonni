@@ -32,7 +32,7 @@ class AcqFnWrapper:
         self.embedding = SinCosActionEmbedding(num_channels=num_embedding_channels)
         self.model = MLPEnsemble(ensemble_cfg)
         self.sample_mask = sample_mask
-    
+
     def _forward(self, x_local: jax.Array) -> jax.Array:
         jitted_af = jax.jit(self.af, static_argnames=["model", "embedding"])
         acq_value = jitted_af(
@@ -46,7 +46,7 @@ class AcqFnWrapper:
             sample_mask=jnp.asarray(self.sample_mask),
         )
         return acq_value
-    
+
     def __call__(
         self,
         x: np.ndarray,
@@ -56,7 +56,7 @@ class AcqFnWrapper:
         value_numpy = np.asarray(value, dtype=float)
         grad_numpy = np.asarray(grad, dtype=float)
         return value_numpy, grad_numpy
-    
+
     def jax_call(
         self,
         x: jax.Array,
@@ -91,18 +91,24 @@ def optimize_acquisition_ipopt(
             params=params,
             sample_mask=sample_mask,
         )
-        
+
         num_actions = bounds.shape[0]
         key, subkey = jax.random.split(key)
-        random_actions = jax.random.uniform(subkey, shape=(num_initial_random_samples, num_actions,))
+        random_actions = jax.random.uniform(
+            subkey,
+            shape=(
+                num_initial_random_samples,
+                num_actions,
+            ),
+        )
         random_actions_np = np.asarray(random_actions, dtype=float)
         action_ranges = bounds[:, 1] - bounds[:, 0]
         all_x0 = random_actions_np * action_ranges + bounds[:, 0]
         all_y0 = jax.vmap(acq_wrapper._forward)(jnp.asarray(all_x0))
-        
+
         best_x0_idx = np.argmax(all_y0)
         x0 = all_x0[best_x0_idx]
-        
+
         ax, ay, _ = optimize_ipopt(
             fn=acq_wrapper,
             x0=x0,
@@ -110,21 +116,16 @@ def optimize_acquisition_ipopt(
             max_fn_eval=num_acq_optim_samples,
             direction="maximize",
         )
-        
+
         max_idx = np.argmax(ay)
-        
+
         cur_best_sample = ax[max_idx]
         af_value = ay[max_idx]
         if best_new_sample is None or af_value > max_af_value:
             best_new_sample = cur_best_sample
         if max_af_value is None or af_value > max_af_value:
             max_af_value = af_value
-    
+
     assert best_new_sample is not None
     assert max_af_value is not None
     return best_new_sample, max_af_value
-    
-    
-    
-    
-

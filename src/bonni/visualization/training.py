@@ -11,8 +11,8 @@ def plot_info(
 ):
     for k, v in stacked_info.items():
         plt.clf()
-        seaborn.set_theme(style='whitegrid')
+        seaborn.set_theme(style="whitegrid")
         plt.plot(v)
-        plt.yscale('log')
+        plt.yscale("log")
         plt.tight_layout()
         plt.savefig(directory / f"{k}_{iter}.png")

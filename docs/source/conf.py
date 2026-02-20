@@ -12,42 +12,41 @@ from pathlib import Path
 # -- Project information -----------------------------------------------------
 
 # Define path to pyproject.toml (assuming conf.py is in docs/source/)
-root_path = Path(__file__).parents[2] 
+root_path = Path(__file__).parents[2]
 
 with open(root_path / "pyproject.toml", "rb") as f:
     data = tomllib.load(f)
-    
-project = data["project"]["name"] # Or keep hardcoded if you prefer formatting
-author = data["project"]["authors"][0]["name"] # Auto-fetch author
-release = data["project"]["version"] # The crucial part!
 
-copyright = f'2026, {author}'
+project = data["project"]["name"]  # Or keep hardcoded if you prefer formatting
+author = data["project"]["authors"][0]["name"]  # Auto-fetch author
+release = data["project"]["version"]  # The crucial part!
+
+copyright = f"2026, {author}"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.napoleon',
-    'sphinx_autodoc_typehints',
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.napoleon",
+    "sphinx_autodoc_typehints",
     "myst_nb",
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
 ]
 
-templates_path = ['_templates']
+templates_path = ["_templates"]
 exclude_patterns = []
-
 
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'sphinx_book_theme'
-html_static_path = ['_static']
-html_favicon = '_static/bonni_favicon.ico'
-html_logo = '_static/bonni_text.png'
+html_theme = "sphinx_book_theme"
+html_static_path = ["_static"]
+html_favicon = "_static/bonni_favicon.ico"
+html_logo = "_static/bonni_text.png"
 
 html_theme_options = {
     "repository_url": "https://github.com/ymahlau/bonni",
@@ -67,7 +66,7 @@ autosummary_generate = True
 # }
 
 autodoc_default_options = {
-    'undoc-members': False,  # Don't document members without docstrings
+    "undoc-members": False,  # Don't document members without docstrings
 }
 autodoc_mock_imports = ["cyipopt"]
 
@@ -80,8 +79,8 @@ myst_enable_extensions = [
 
 # MathJax configuration (optional, for customization)
 mathjax3_config = {
-    'tex': {
-        'inlineMath': [['$', '$'], ['\\(', '\\)']],
-        'displayMath': [['$$', '$$'], ['\\[', '\\]']],
+    "tex": {
+        "inlineMath": [["$", "$"], ["\\(", "\\)"]],
+        "displayMath": [["$$", "$$"], ["\\[", "\\]"]],
     }
 }

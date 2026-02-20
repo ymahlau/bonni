@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
 import jax
-import jax.numpy as jnp
 
 from bonni.model.mlp import MLP, MLPModelConfig
 
@@ -13,14 +12,10 @@ class MLPEnsembleConfig:
 
 
 class MLPEnsemble:
-    def __init__(
-        self,
-        cfg: MLPEnsembleConfig
-    ) -> None:
+    def __init__(self, cfg: MLPEnsembleConfig) -> None:
         self.cfg = cfg
         self.base_model = MLP(self.cfg.base_cfg)
-    
-    
+
     def init(
         self,
         key: jax.Array,
@@ -29,8 +24,7 @@ class MLPEnsemble:
         key_list = jax.random.split(key, self.cfg.num_models)
         vmapped_params = jax.vmap(self.base_model.init, in_axes=[0, None])(key_list, x)
         return vmapped_params
-        
-    
+
     def apply(
         self,
         params,
@@ -40,10 +34,10 @@ class MLPEnsemble:
         single_forward: bool = False,
     ) -> jax.Array:
         assert x.ndim == 1
-            
+
         def _single_sample_single_model(p, k):
             return self.base_model.apply(p, x, deterministic=deterministic, rngs=k)
-        
+
         if rngs is not None:
             assert rngs.size == 2
             if single_forward:
@@ -54,7 +48,11 @@ class MLPEnsemble:
                 k = jax.random.split(rngs, self.cfg.num_models)
             results = forward_fn(params, k)
         else:
-            forward_fn = _single_sample_single_model if single_forward else jax.vmap(_single_sample_single_model, in_axes=(0, None))
+            forward_fn = (
+                _single_sample_single_model
+                if single_forward
+                else jax.vmap(_single_sample_single_model, in_axes=(0, None))
+            )
             results = forward_fn(params, None)
 
         assert isinstance(results, jax.Array)
