@@ -1,0 +1,15 @@
+coverage:
+  ignore:
+    - "tests/"
+    - "**/test_*.py"
+  status:
+    patch:
+      default:
+        informational: true
+        target: 90%
+        threshold: 0% 
+    project:
+      default:
+        informational: true
+        target: 45%           # Fail if overall coverage drops below
+        threshold: 2%         # Allow decrease from previous coverage

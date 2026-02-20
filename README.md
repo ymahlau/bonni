@@ -2,6 +2,8 @@
 
 [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://bonni.readthedocs.io/en/latest/)
 [![PyPI version](https://img.shields.io/pypi/v/bonni)](https://pypi.org/project/bonni/)
+[![codecov](https://codecov.io/gh/ymahlau/bonni/branch/main/graph/badge.svg)](https://codecov.io/gh/ymahlau/bonni)
+[![Continuous integration](https://github.com/ymahlau/bonni/actions/workflows/cicd.yml/badge.svg?branch=main)](https://github.com/ymahlau/bonni/actions/workflows/cicd.yml/badge.svg?branch=main)
 
 # BONNI: Bayesian Optimization via Neural Network surrogates and Interior Point Optimization
 
@@ -99,3 +101,14 @@ The full code for the optimization can be found at `scripts/grating_coupler.py`.
 If you find this repository helpful for your research, please consider citing:
 
 TODO insert citation as soon as paper online.
+
+
+# Other Links
+
+Also check out my other repositories:
+
+> ### 💡 [**fdtdx**](https://github.com/ymahlau/fdtdx) 
+> [![GitHub stars](https://img.shields.io/github/stars/ymahlau/fdtdx?style=social)](https://github.com/ymahlau/fdtdx/stargazers) [![GitHub forks](https://img.shields.io/github/forks/ymahlau/fdtdx?style=social)](https://github.com/ymahlau/fdtdx/network/members) 
+> 
+> A high-performance, differentiable and GPU-accelerated Finite-Difference Time-Domain solver. 
+
