@@ -14,11 +14,11 @@ import time
 from bonni import ActivationType, EIConfig, MLPModelConfig, OptimConfig, optimize_bonni
 from bonni.misc import change_to_timestamped_dir
 import numpy as onp
-import autograd.numpy as np
-import autograd
+import autograd.numpy as np  # type: ignore
+import autograd  # type: ignore
 
-import tidy3d as td
-from tidy3d import web
+import tidy3d as td  # type: ignore
+from tidy3d import web  # type: ignore
 
 
 @dataclass(frozen=True)
@@ -104,7 +104,7 @@ class CrystalTaperEnv:
             )
 
             power_da = self.get_mode_monitor_power(sim_data)
-            power = np.squeeze(power_da.data)  # type: ignore
+            power = np.squeeze(power_da.data)
             return power.flatten()
 
         for idx in range(self.cfg.num_retry_after_failure):
@@ -148,7 +148,7 @@ class CrystalTaperEnv:
             ]
             bound_list.extend(radius_list)
 
-        return np.asarray(bound_list, dtype=float)  # type: ignore
+        return np.asarray(bound_list, dtype=float)
 
     def get_base_sim(self) -> td.Simulation:
         mat_si = td.Medium(permittivity=self.cfg.n_si**2)
@@ -306,8 +306,8 @@ class CrystalTaperEnv:
 
         rl, rs = None, None
         if self.cfg.include_radius:
-            mid_rl = np.ones_like(cl[10:-10, 0, 0]) * self.cfg.hole_radius  # type: ignore
-            mid_rs = np.ones_like(cs[10:-10, 0, 0]) * self.cfg.hole_radius  # type: ignore
+            mid_rl = np.ones_like(cl[10:-10, 0, 0]) * self.cfg.hole_radius
+            mid_rs = np.ones_like(cs[10:-10, 0, 0]) * self.cfg.hole_radius
             rad_actions = full_actions[60:]
             rl3 = np.concatenate(
                 [rad_actions[:10], mid_rl, rad_actions[:10][::-1]], axis=0
@@ -330,21 +330,21 @@ class CrystalTaperEnv:
 
             rl = np.concatenate(
                 [
-                    np.ones_like(cl[:, :3, 0]) * self.cfg.hole_radius,  # type: ignore
+                    np.ones_like(cl[:, :3, 0]) * self.cfg.hole_radius,
                     rl3[:, None],
                     rl4[:, None],
                     rl5[:, None],
                     rl6[:, None],
-                    np.ones_like(cl[:, :3, 0]) * self.cfg.hole_radius,  # type: ignore
+                    np.ones_like(cl[:, :3, 0]) * self.cfg.hole_radius,
                 ],
                 axis=1,
             )
             rs = np.concatenate(
                 [
-                    np.ones_like(cs[:, :4, 0]) * self.cfg.hole_radius,  # type: ignore
+                    np.ones_like(cs[:, :4, 0]) * self.cfg.hole_radius,
                     rs4[:, None],
                     rs5[:, None],
-                    np.ones_like(cs[:, 6:, 0]) * self.cfg.hole_radius,  # type: ignore
+                    np.ones_like(cs[:, 6:, 0]) * self.cfg.hole_radius,
                 ],
                 axis=1,
             )
@@ -383,7 +383,7 @@ class CrystalTaperEnv:
             hole_list.append(cur_cylinder)
 
         holes = td.Structure(
-            geometry=td.GeometryGroup(geometries=hole_list),  # type: ignore
+            geometry=td.GeometryGroup(geometries=hole_list),
             medium=mat_sio2,
             name="Holes",
         )
@@ -451,7 +451,7 @@ class CrystalTaperEnv:
         """Return |amps|^2 from a mode monitor as an xarray DataArray."""
         monitor = sim_data[monitor_name]
         amps = monitor.amps.sel(mode_index=mode_index, direction=direction)
-        power = np.abs(amps) ** 2  # type: ignore
+        power = np.abs(amps) ** 2
         if power_floor is not None:
             power = power.clip(min=power_floor)
         return power

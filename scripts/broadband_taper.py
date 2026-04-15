@@ -12,11 +12,11 @@ import time
 from bonni import ActivationType, EIConfig, MLPModelConfig, OptimConfig, optimize_bonni
 from bonni.misc import change_to_timestamped_dir
 import numpy as onp
-import autograd.numpy as np
-import autograd
+import autograd.numpy as np  # type: ignore
+import autograd  # type: ignore
 
-import tidy3d as td
-from tidy3d import web
+import tidy3d as td  # type: ignore
+from tidy3d import web  # type: ignore
 
 
 from autograd.numpy.linalg import solve as alg_solve  # type: ignore
@@ -41,21 +41,21 @@ class DifferentiableSpline:
 
         # 1. Main Diagonal: [1, 4, 4, ..., 4, 1]
         # We construct it piecewise to avoid item assignment
-        mid_ones = 4.0 * np.ones(n - 2)  # type: ignore
+        mid_ones = 4.0 * np.ones(n - 2)
         main_diag = np.concatenate([np.array([1.0]), mid_ones, np.array([1.0])])
 
         # 2. Upper Diagonal (k=1): [0, 1, 1, ..., 1]
         # The first element is 0 to decouple the first boundary equation
-        up_ones = np.ones(n - 2)  # type: ignore
+        up_ones = np.ones(n - 2)
         up_diag = np.concatenate([np.array([0.0]), up_ones])
 
         # 3. Lower Diagonal (k=-1): [1, 1, ..., 1, 0]
         # The last element is 0 to decouple the last boundary equation
-        lo_ones = np.ones(n - 2)  # type: ignore
+        lo_ones = np.ones(n - 2)
         lo_diag = np.concatenate([lo_ones, np.array([0.0])])
 
         # 4. Assemble Matrix A (All parts are now compatible (N, N) shapes)
-        A = np.diag(main_diag) + np.diag(up_diag, k=1) + np.diag(lo_diag, k=-1)  # type: ignore
+        A = np.diag(main_diag) + np.diag(up_diag, k=1) + np.diag(lo_diag, k=-1)
 
         # 5. Construct RHS
         # rhs_i = 3/h * (y_{i+1} - y_{i-1})
@@ -66,8 +66,8 @@ class DifferentiableSpline:
         return alg_solve(A, rhs)  # tpye: ignore
 
     def integrate_intervals(self, lb, ub):
-        idx = np.searchsorted(self.x, lb, side="right") - 1  # type: ignore
-        idx = np.clip(idx, 0, self.n - 2)  # type: ignore
+        idx = np.searchsorted(self.x, lb, side="right") - 1
+        idx = np.clip(idx, 0, self.n - 2)
 
         y_i = self.y[idx]
         y_ip1 = self.y[idx + 1]
@@ -207,7 +207,7 @@ class TaperEnv:
             )
 
             power_da = self.get_mode_monitor_power(sim_data)
-            power = np.min(power_da.data)  # type: ignore
+            power = np.min(power_da.data)
             return power.flatten()
 
         for _ in range(self.cfg.num_retry_after_failure):
@@ -260,27 +260,27 @@ class TaperEnv:
 
     def get_spline_interpolation(
         self,
-        anchor_heights: np.array,  # type: ignore
+        anchor_heights: np.array,
         num_x: int,
     ):
         """
         Evaluates the terrain height using a differentiable CubicSpline (Autograd).
         """
         # Ensure 1D
-        anchor_heights = np.atleast_1d(anchor_heights)  # type: ignore
+        anchor_heights = np.atleast_1d(anchor_heights)
 
         # 1. Define the physical x-coordinates
         pixel_size = 1.0 / num_x
 
         # Create evaluation points (pixels)
-        lb = np.linspace(0, 1 - pixel_size, num_x)  # type: ignore
-        ub = np.linspace(pixel_size, 1, num_x)  # type: ignore
+        lb = np.linspace(0, 1 - pixel_size, num_x)
+        ub = np.linspace(pixel_size, 1, num_x)
 
         num_anchor = anchor_heights.shape[0]
 
         # Create anchor x-coordinates (0 to 1)
         # Corresponds to: x_anchor = jnp.linspace(0, 1, num_anchor+2)
-        x_anchor = np.linspace(0, 1, num_anchor + 2)  # type: ignore
+        x_anchor = np.linspace(0, 1, num_anchor + 2)
 
         # Concatenate bounds: [min_clip, anchors, max_clip]
         # Autograd requires np.concatenate, not manual assignment
@@ -305,13 +305,13 @@ class TaperEnv:
 
     def rasterize_spline_area(
         self,
-        heights: np.ndarray,  # type: ignore
+        heights: np.ndarray,
         num_pixel_y: int,
-    ) -> np.ndarray:  # type: ignore
+    ) -> np.ndarray:
         # assumes that heights are within 0 < h < 1
         assert heights.ndim == 1
         y_pixel_half_size = 1 / (num_pixel_y * 2)
-        ys = np.linspace(y_pixel_half_size, 1 - y_pixel_half_size, num_pixel_y)  # type: ignore
+        ys = np.linspace(y_pixel_half_size, 1 - y_pixel_half_size, num_pixel_y)
 
         # Broadcast to create the grid
         # heights: (1, grid_width)
@@ -325,7 +325,7 @@ class TaperEnv:
         #   If h <= y:     Not covered (0.0)
         #   If y < h < y + 1: Partially covered (h - y)
         # This logic is exactly captured by subtracting and clipping.
-        area_coverage = np.clip(h_grid - y_grid, -y_pixel_half_size, y_pixel_half_size)  # type: ignore
+        area_coverage = np.clip(h_grid - y_grid, -y_pixel_half_size, y_pixel_half_size)
         area_rescaled = area_coverage * num_pixel_y + 0.5
 
         return area_rescaled
@@ -437,7 +437,7 @@ class TaperEnv:
 
     def get_taper_structure(
         self,
-        params: np.ndarray,  # type: ignore
+        params: np.ndarray,
     ):
         design_region_geometry = self.get_taper_region_geometry()
         scaled_params = (
@@ -450,10 +450,10 @@ class TaperEnv:
 
     def get_simulation(
         self,
-        actions: np.ndarray,  # type: ignore
+        actions: np.ndarray,
     ) -> td.Simulation:
         # map params
-        clip_actions = np.clip(  # ty:ignore[unresolved-attribute]
+        clip_actions = np.clip(
             actions, a_min=self.action_bounds[:, 0], a_max=self.action_bounds[:, 1]
         )
         heights = self.get_spline_interpolation(
@@ -482,7 +482,7 @@ class TaperEnv:
         """Return |amps|^2 from a mode monitor as an xarray DataArray."""
         monitor = sim_data[monitor_name]
         amps = monitor.amps.sel(mode_index=mode_index, direction=direction)
-        power = np.abs(amps) ** 2  # type: ignore
+        power = np.abs(amps) ** 2
         if power_floor is not None:
             power = power.clip(min=power_floor)
         return power
