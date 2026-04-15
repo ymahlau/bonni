@@ -8,18 +8,18 @@
 from dataclasses import dataclass
 import math
 from pathlib import Path
-from autograd.tracer import getval
+from autograd.tracer import getval  # type: ignore
 import sys
 import time
 
 from bonni import ActivationType, EIConfig, MLPModelConfig, OptimConfig, optimize_bonni
 from bonni.misc import change_to_timestamped_dir
 import numpy as onp
-import autograd.numpy as np
-import autograd
+import autograd.numpy as np  # type: ignore
+import autograd  # type: ignore
 
-import tidy3d as td
-from tidy3d import web
+import tidy3d as td  # type: ignore
+from tidy3d import web  # type: ignore
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -145,10 +145,10 @@ class GCEnv:
             widths_sin = actions_np[2 * n : 3 * n]
             gaps_sin = actions_np[3 * n : 4 * n]
         else:
-            widths_si = np.ones(shape=(self.cfg.num_elements,)) * actions_np[0]  # type: ignore
-            gaps_si = np.ones(shape=(self.cfg.num_elements,)) * actions_np[1]  # type: ignore
-            widths_sin = np.ones(shape=(self.cfg.num_elements,)) * actions_np[2]  # type: ignore
-            gaps_sin = np.ones(shape=(self.cfg.num_elements,)) * actions_np[3]  # type: ignore
+            widths_si = np.ones(shape=(self.cfg.num_elements,)) * actions_np[0]
+            gaps_si = np.ones(shape=(self.cfg.num_elements,)) * actions_np[1]
+            widths_sin = np.ones(shape=(self.cfg.num_elements,)) * actions_np[2]
+            gaps_sin = np.ones(shape=(self.cfg.num_elements,)) * actions_np[3]
         # first si gap
         first_gap_si = None
         idx = self.num_base_actions
@@ -185,11 +185,11 @@ class GCEnv:
             sim_data = web.run(
                 sim,
                 task_name="gc",
-                path="gc_results.hdf5",  # ty:ignore[invalid-argument-type]
+                path="gc_results.hdf5",
             )
 
             power_da = self.get_mode_monitor_power(sim_data)
-            power = np.squeeze(power_da.data)  # type: ignore
+            power = np.squeeze(power_da.data)
             center_idx = math.floor(len(power) / 2)
             center_power = power[center_idx].flatten()
             return center_power
@@ -229,8 +229,8 @@ class GCEnv:
             return widths[:0], widths
 
         combined = widths[:-1] + gaps_interior
-        cumulative = np.cumsum(combined)  # type: ignore
-        prefix_offset = np.zeros(1, dtype=widths.dtype)  # type: ignore
+        cumulative = np.cumsum(combined)
+        prefix_offset = np.zeros(1, dtype=widths.dtype)
         prefix = (
             np.concatenate((prefix_offset, cumulative))
             if cumulative.size
@@ -290,7 +290,7 @@ class GCEnv:
         ]
         structures.append(
             td.Structure(
-                geometry=td.GeometryGroup(geometries=si_teeth),  # type: ignore
+                geometry=td.GeometryGroup(geometries=si_teeth),
                 medium=self.si,
                 name="si_teeth",
             )
@@ -314,14 +314,14 @@ class GCEnv:
 
         sin_teeth = [
             td.Box(
-                center=(center, 0, sin_waveguide_geom.center[2]),  # type: ignore
+                center=(center, 0, sin_waveguide_geom.center[2]),
                 size=(width, self.cfg.inf, sin_thickness),
             )
             for center, width in zip(c_sin, w_sin)
         ]
         structures.append(
             td.Structure(
-                geometry=td.GeometryGroup(geometries=sin_teeth),  # type: ignore
+                geometry=td.GeometryGroup(geometries=sin_teeth),
                 medium=self.sin,
                 name="sin_teeth",
             )
@@ -361,7 +361,7 @@ class GCEnv:
         )
 
         freq0 = td.C_0 / self.cfg.center_wavelength
-        freqs = td.C_0 / np.linspace(  # type: ignore
+        freqs = td.C_0 / np.linspace(
             self.cfg.center_wavelength - self.cfg.bandwidth / 2,
             self.cfg.center_wavelength + self.cfg.bandwidth / 2,
             self.cfg.freq_points,
@@ -372,8 +372,8 @@ class GCEnv:
             center=(self.cfg.beam_offset_x, 0, source_z),
             size=(self.cfg.inf, self.cfg.inf, 0),
             source_time=td.GaussianPulse(freq0=freq0, fwidth=freq0 / 10),
-            pol_angle=np.pi / 2,  # type: ignore
-            angle_theta=np.deg2rad(self.cfg.beam_angle_deg),  # type: ignore
+            pol_angle=np.pi / 2,
+            angle_theta=np.deg2rad(self.cfg.beam_angle_deg),
             direction="-",
             waist_radius=self.cfg.beam_mfd / 2,
             name="input_beam",
@@ -434,7 +434,7 @@ class GCEnv:
         """Return |amps|^2 from a mode monitor as an xarray DataArray."""
         monitor = sim_data[monitor_name]
         amps = monitor.amps.sel(mode_index=mode_index, direction=direction)
-        power = np.abs(amps) ** 2  # type: ignore
+        power = np.abs(amps) ** 2
         if power_floor is not None:
             power = power.clip(min=power_floor)
         return power

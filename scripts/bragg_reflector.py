@@ -13,7 +13,7 @@ import jax.numpy as jnp
 from dataclasses import dataclass
 
 # Import the standard tmm library
-from tmm import coh_tmm
+from tmm import coh_tmm  # type: ignore
 
 # --- Constants ---
 N_AIR = 1.0
