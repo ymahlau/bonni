@@ -7,6 +7,40 @@ from bonni.constants import INPUT_FN_TYPE
 from bonni.function import MAX_EVAL_MSG_STR, FunctionWrapper
 
 
+class IpoptProblemObj:
+    def __init__(
+        self,
+        fn_wrapper: FunctionWrapper,
+    ):
+        self.fn_wrapper = fn_wrapper
+        self._last_x: np.ndarray | None = None
+        self._last_g: np.ndarray | None = None
+
+    def objective(self, x: np.ndarray):
+        if self._last_x is not None:
+            value = self._last_x
+            self._last_x = None
+            return value
+        value, grad = self.fn_wrapper(x)
+        self._last_g = grad
+        return value
+
+    def gradient(self, x):
+        if self._last_g is not None:
+            grad = self._last_g
+            self._last_g = None
+            return grad
+        value, grad = self.fn_wrapper(x)
+        self._last_x = value
+        return grad
+
+    def constraints(self, x):
+        return np.zeros(shape=())
+
+    def jacobian(self, x):
+        return np.zeros(shape=())
+
+
 def optimize_ipopt(
     fn: INPUT_FN_TYPE,
     x0: np.ndarray,
@@ -73,29 +107,30 @@ def optimize_ipopt(
         save_path=save_path,
     )
 
-    options = {}
-    if max_iterations is not None:
-        options["maxiter"] = max_iterations
-
     bounds_ipopt = np.copy(bounds).astype(float)
     bounds_range = bounds_ipopt[:, 1] - bounds_ipopt[:, 0]
     bounds_eps = bounds_range * bound_contract_ratio / 2
     bounds_ipopt[:, 0] += bounds_eps
     bounds_ipopt[:, 1] -= bounds_eps
 
+    obj = IpoptProblemObj(wrapper)
+    nlp = cyipopt.Problem(  # ty:ignore[unresolved-attribute]
+        n=bounds.shape[0],
+        m=0,
+        problem_obj=obj,
+        lb=bounds_ipopt[:, 0],
+        ub=bounds_ipopt[:, 1],
+    )
+
+    nlp.add_option(keyword="hessian_approximation", val="limited-memory")
+    nlp.add_option(keyword="tol", val=tol)
+    if max_iterations is not None:
+        nlp.add_option(keyword="max_iter", val=max_iterations)
+
     try:
-        cyipopt.minimize_ipopt(
-            fun=wrapper,
-            x0=x0,
-            args=(),
-            method=None,
-            jac=True,
-            bounds=bounds_ipopt,
-            tol=tol,
-            options=options,
-        )
+        nlp.solve(x0)
     except Exception as e:
-        # if we are early stopping due, then do nothing. If this is real error, raise it again
+        # if we are early stopping, then do nothing. If this is real error, raise it again
         if str(e) != MAX_EVAL_MSG_STR:
             raise e
 
