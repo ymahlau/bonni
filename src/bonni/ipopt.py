@@ -76,6 +76,7 @@ def optimize_ipopt(
     options = {}
     if max_iterations is not None:
         options["maxiter"] = max_iterations
+    options["print_level"] = 0
 
     bounds_ipopt = np.copy(bounds).astype(float)
     bounds_range = bounds_ipopt[:, 1] - bounds_ipopt[:, 0]
