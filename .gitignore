@@ -1,4 +1,6 @@
 uv.lock
+pixi.lock
+.pixi
 .venv
 outputs/
 *.pyc
@@ -6,3 +8,4 @@ outputs/
 docs/build
 docs/source/api
 scripts_dev/
+.vscode

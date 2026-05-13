@@ -53,7 +53,7 @@ After user approval:
 ## Phase 5: Verify
 
 After all implementation is done:
-1. Run the linter: `uv run pre-commit run -a`
-2. Run relevant tests: `uv run python -m pytest tests -m "unit or integration"` (adjust markers based on what was changed)
+1. Run the linter: `pixi run pre-commit run -a`
+2. Run relevant tests: `pixi run python -m pytest tests -m "unit or integration"` (adjust markers based on what was changed)
 3. Fix any issues found
 4. Summarize what was done

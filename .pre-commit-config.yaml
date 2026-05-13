@@ -27,9 +27,8 @@ repos:
   - repo: local
     hooks:
       - id: ty
-        name: ty (via uvx)
-        # This executes exactly what you run in the terminal
-        entry: uvx ty check --error-on-warning src/ tests/
+        name: ty (via pixi)
+        entry: pixi run ty check --error-on-warning src/ tests/
         language: system
         types: [python]
         pass_filenames: false

@@ -15,14 +15,24 @@ In the image, the surrogate fits the function almost perfectly with few observat
 
 ## Installation
 
-You can install BONNI simply via 
+> **Note:** Installation via `pip install bonni` is no longer supported. BONNI depends on
+> [cyipopt](https://cyipopt.readthedocs.io), which requires native IPOPT C libraries that
+> conda-forge provides but pip does not. Please use [pixi](https://pixi.sh) instead.
+
+Install [pixi](https://pixi.sh/latest/#installation), then clone the repository and run:
 
 ```bash
-pip install bonni
+git clone https://github.com/ymahlau/bonni.git
+cd bonni
+pixi install
 ```
-We recommend installing also the GPU-acceleration from JAX, which will massively increase speed:
+
+This resolves all dependencies — including the native IPOPT libraries — from conda-forge automatically.
+
+For GPU-accelerated JAX, add the cuda-enabled jax variant after installation:
+
 ```bash
-pip install jax[cuda]
+pixi run pip install jax[cuda]
 ```
 
 
@@ -54,7 +64,7 @@ xs, ys, gs = optimize_bonni(
 )
 ```
 
-Additionally, BONNI includes a convenient wrapper for IPOPT. The standard IPOPT package can be difficult to install/use, so we created a convenient wrapper shown below:
+Additionally, BONNI includes a convenient wrapper for IPOPT (via [cyipopt](https://cyipopt.readthedocs.io)) shown below:
 
 ```python
 from bonni import optimize_ipopt
