@@ -1,0 +1,18 @@
+[workspace]
+name = "bonni"
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64", "win-64"]
+
+[dependencies]
+python = ">=3.12,<3.14"
+cyipopt = ">=1.7.0"
+ty = "*"
+
+[pypi-dependencies]
+bonni = { path = ".", editable = true, extras = ["dev"] }
+
+[tasks]
+test = "python -m pytest tests"
+lint = "ruff check ."
+format = "ruff format ."
+docs = "sphinx-build -W --keep-going docs/source/ docs/build/"

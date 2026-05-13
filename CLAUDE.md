@@ -9,27 +9,27 @@ BONNI is a **Bayesian Optimization with Neural Network surrogates** library. It 
 ## Commands
 
 ```bash
-# Install dev dependencies
-uv sync --extra dev
+# Install all dependencies (requires pixi: https://pixi.sh)
+pixi install
 
 # Run all tests
-uv run python -m pytest tests --cov --cov-branch --cov-config=pyproject.toml --cov-report=xml
+pixi run test
 
 # Run a single test file
-uv run python -m pytest tests/test_bonni.py
+pixi run python -m pytest tests/test_bonni.py
 
 # Lint and format
-uv run ruff check .
-uv run ruff format .
+pixi run lint
+pixi run format
 
 # Type checking
-uvx ty check --error-on-warning
+pixi run ty check --error-on-warning
 
 # Build docs
-uv run sphinx-build -W --keep-going docs/source/ docs/build/
+pixi run docs
 ```
 
-Pre-commit hooks (ruff, type checking, YAML validation) run automatically on commit. To run manually: `uv run pre-commit run -a`.
+Pre-commit hooks (ruff, type checking, YAML validation) run automatically on commit. To run manually: `pixi run pre-commit run -a`.
 
 ## Architecture
 

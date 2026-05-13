@@ -1,23 +1,22 @@
 [project]
 name = "bonni"
-version = "1.1.2"
+version = "1.2.0"
 description = "BONNI: Bayesian Optimization via Neural Network surrogates and Interior Point Optimization"
 readme = "README.md"
 authors = [
     { name = "Yannik Mahlau", email = "mahlau@tnt.uni-hannover.de" },
 ]
-requires-python = ">=3.12, <3.13"
+requires-python = ">=3.12, <3.14"
 dependencies = [
-    "jax",
-    "matplotlib",
-    "flax",
+    "jax>=0.10.0",
+    "matplotlib>=3.10.9",
+    "flax>=0.12.7",
     "seaborn>=0.13.2",
     "tqdm>=4.67.1",
     "scipy>=1.15.2",
     "nlopt>=2.9.1",
-    "pipipopt>=1.6.1",
     "optax>=0.2.6",
-    "numpy<2.4",
+    "numpy>=2.4.4",
 ]
 
 [project.optional-dependencies]
@@ -35,7 +34,6 @@ dev = [
     "pytest>=8.3.4",
     "pytest-cov>=6.0.0",
     "ruff>=0.8.2",
-    "tox-uv>=1.16.1",
     "pydoclint>=0.6.6",
     "sphinx<9.0",
     "sphinx-autobuild>=2025.8.25",
@@ -52,3 +50,6 @@ build-backend = "hatchling.build"
 
 [tool.hatch.metadata]
 allow-direct-references = true
+
+[tool.ty.src]
+exclude = ["scripts"]
