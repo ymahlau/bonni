@@ -19,10 +19,10 @@ Installation
 .. note::
 
    ``pip install bonni`` is not supported. BONNI depends on
-   `cyipopt <https://cyipopt.readthedocs.io>`_, which requires native IPOPT C libraries
-   that conda-forge provides but pip does not. Please use `pixi <https://pixi.sh>`_ instead.
+   `cyipopt <https://cyipopt.readthedocs.io>`__, which requires native IPOPT C libraries
+   that conda-forge provides but pip does not. Please use `pixi <https://pixi.sh>`__ instead.
 
-Install `pixi <https://pixi.sh/latest/#installation>`_, then clone the repository and run:
+Install `pixi <https://pixi.sh/latest/#installation>`__, then clone the repository and run:
 
 .. code-block:: bash
 
