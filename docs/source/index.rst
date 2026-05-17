@@ -16,17 +16,27 @@ In the image below, the surrogate fits the function almost perfectly with few ob
 Installation
 ------------
 
-You can install BONNI simply via pip:
+.. note::
+
+   ``pip install bonni`` is not supported. BONNI depends on
+   `cyipopt <https://cyipopt.readthedocs.io>`__, which requires native IPOPT C libraries
+   that conda-forge provides but pip does not. Please use `pixi <https://pixi.sh>`__ instead.
+
+Install `pixi <https://pixi.sh/latest/#installation>`__, then clone the repository and run:
 
 .. code-block:: bash
 
-   pip install bonni
+   git clone https://github.com/ymahlau/bonni.git
+   cd bonni
+   pixi install
 
-We recommend installing also the GPU-acceleration from JAX, which will massively increase speed:
+This resolves all dependencies — including the native IPOPT libraries — from conda-forge automatically.
+
+For GPU-accelerated JAX, add the CUDA-enabled variant after installation:
 
 .. code-block:: bash
 
-   pip install jax[cuda]
+   pixi run pip install jax[cuda]
 
 Usage
 -----
@@ -114,4 +124,5 @@ TODO insert citation as soon as paper online.
    :hidden:
 
    self
+   tutorial
    api
