@@ -110,7 +110,21 @@ The full code for the optimization can be found at `scripts/grating_coupler.py`.
 
 If you find this repository helpful for your research, please consider citing:
 
-TODO insert citation as soon as paper online.
+```
+@article{Mahlau_26,
+	author = {Yannik Mahlau and Yannick Augenstein and Tyler W. Hughes and Marius Lindauer and Bodo Rosenhahn},
+	journal = {Opt. Express},
+	number = {13},
+	pages = {23160--23174},
+	publisher = {Optica Publishing Group},
+	title = {Gradient-informed Bayesian and interior point optimization for efficient inverse design in nanophotonics},
+	volume = {34},
+	month = {Jun},
+	year = {2026},
+	url = {https://opg.optica.org/oe/abstract.cfm?URI=oe-34-13-23160},
+	doi = {10.1364/OE.600198},
+}
+```
 
 
 # Other Links
